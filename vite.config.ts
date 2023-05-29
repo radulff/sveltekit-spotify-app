@@ -7,7 +7,7 @@ export default defineConfig({
 		preprocessorOptions: {
 			scss: {
 				additionalData: `
-					@use "../styles/functions.scss"; 
+					@use "src/styles/functions.scss"; 
 					@use "@unsass/breakpoint";
 					`,
 			}

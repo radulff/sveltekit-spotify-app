@@ -35,7 +35,9 @@
 	"type": "module",
 	"dependencies": {
 		"@fontsource/metropolis": "^5.0.1",
+		"@types/spotify-api": "^0.0.22",
 		"@unsass/breakpoint": "^2.3.0",
+		"lucide-svelte": "^0.224.0",
 		"modern-normalize": "^2.0.0",
 		"pkce-gen": "^1.1.0"
 	}
