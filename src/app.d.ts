@@ -7,7 +7,7 @@ declare namespace App {
 	interface PageData {
 		user: SpotifyApi.CurrentUsersProfileResponse | null;
 		title?: string;
-		color?: string | null
+		color?: string | null;
 	}
 	// interface Platform {}
 }

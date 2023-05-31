@@ -1,17 +1,22 @@
 <script lang="ts">
-	import { Navigation, Header } from '$components';
+	import { Navigation, Header, Toasts, SearchForm } from '$components';
 	import { page } from '$app/stores';
-	import Nprogress from 'nprogress';
+	import NProgress from 'nprogress';
+	import MicroModal from 'micromodal';
+	import { hideAll } from 'tippy.js';
 	import 'nprogress/nprogress.css';
 	import 'modern-normalize/modern-normalize.css';
 	import '../styles/main.scss';
 	import type { LayoutData } from './$types';
 	import { afterNavigate, beforeNavigate } from '$app/navigation';
-	import tippy, { hideAll } from 'tippy.js';
+	import { browser } from '$app/environment';
+	import { X } from 'lucide-svelte';
 
-	Nprogress.configure({
-		showSpinner: false
-	});
+	NProgress.configure({ showSpinner: false });
+
+	if (browser) {
+		MicroModal.init();
+	}
 
 	let topbar: HTMLElement;
 	let scrollY: number;
@@ -23,35 +28,49 @@
 
 	export let data: LayoutData;
 
-	$: user = data.user;
+	$: hasError = $page.url.searchParams.get('error');
+	$: hasSuccess = $page.url.searchParams.get('success');
 
-	beforeNavigate(() => {
-		Nprogress.start();
-		hideAll();
-	});
+	$: user = data.user;
+	$: userAllPlaylists = data.userAllPlaylists;
 
 	afterNavigate(() => {
-		Nprogress.done();
+		NProgress.done();
+	});
+
+	beforeNavigate(() => {
+		NProgress.start();
+		hideAll();
 	});
 </script>
 
 <svelte:window bind:scrollY />
 
 <svelte:head>
-	<title>Spotify {$page.data.title ? ` - ${$page.data.title}` : ''}</title>
+	<title>Spotify{$page.data.title ? ` - ${$page.data.title}` : ''}</title>
 </svelte:head>
 
 {#if user}
 	<a href="#main-content" class="skip-link">Skip to Content</a>
 {/if}
 
+<Toasts />
+
 <div id="main">
 	{#if user}
 		<div id="sidebar">
-			<Navigation desktop={true} />
+			<Navigation desktop={true} {userAllPlaylists} />
 		</div>
 	{/if}
 	<div id="content">
+		{#if hasError || hasSuccess}
+			<div class="message" role="status" class:error={hasError} class:success={hasSuccess}>
+				{hasError ?? hasSuccess}
+				<a href={$page.url.pathname} class="close">
+					<X aria-hidden focusable="false" /> <span class="visually-hidden">Close message</span>
+				</a>
+			</div>
+		{/if}
 		{#if user}
 			<div id="topbar" bind:this={topbar}>
 				<div
@@ -59,10 +78,15 @@
 					style:background-color={$page.data.color ? $page.data.color : 'var(--header-color)'}
 					style:opacity={`${headerOpacity}`}
 				/>
-				<Header />
+				<Header {userAllPlaylists} />
 			</div>
 		{/if}
 		<main id="main-content" class:logged-in={user}>
+			{#if $page.url.pathname.startsWith('/search')}
+				<div class="search-form">
+					<SearchForm />
+				</div>
+			{/if}
 			<slot />
 		</main>
 	</div>
@@ -78,6 +102,30 @@
 		}
 		#content {
 			flex: 1;
+			.message {
+				position: sticky;
+				z-index: 9999;
+				padding: 10px 20px;
+				top: 0;
+				.close {
+					position: absolute;
+					right: 10px;
+					top: 5px;
+					&:focus {
+						outline-color: #fff;
+					}
+					:global(svg) {
+						stroke: var(--text-color);
+						vertical-align: middle;
+					}
+				}
+				&.error {
+					background-color: var(--error);
+				}
+				&.success {
+					background-color: var(--accent-color);
+				}
+			}
 			#topbar {
 				position: fixed;
 				height: var(--header-height);
@@ -103,7 +151,7 @@
 					top: 0;
 					left: 0;
 					z-index: -1;
-					background-image: linear-gradient(rgba(0, 0, 0, 0.2));
+					background-image: linear-gradient(rgba(0, 0, 0, 0.2) 0 0);
 				}
 				@include breakpoint.up('md') {
 					padding: 0 30px;
@@ -112,6 +160,15 @@
 			}
 			main#main-content {
 				padding: 30px 15px 60px;
+				.search-form {
+					margin-bottom: 40px;
+					@include breakpoint.up('lg') {
+						display: none;
+					}
+					:global(input) {
+						width: 100%;
+					}
+				}
 				@include breakpoint.up('md') {
 					padding: 30px 30px 60px;
 				}
